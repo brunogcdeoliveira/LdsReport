@@ -1,5 +1,5 @@
 import { app } from './firebase-config.js';
-import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 Chart.register(ChartDataLabels);
@@ -7,11 +7,6 @@ Chart.register(ChartDataLabels);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-let currentFilter = 'Geral';
-let currentChartType = 'frequency';
-let mainChart = null;
-let allUnitData = {};
-let allFrequencyData = {};
 const dashboardTitle = document.getElementById('dashboard-title');
 const filterContainer = document.getElementById('filter-container');
 const kpiContainer = document.getElementById('kpi-container');
@@ -20,6 +15,12 @@ const chartCanvas = document.getElementById('main-chart');
 const chartSelector = document.getElementById('chart-selector');
 const chartTitle = document.getElementById('chart-title');
 const logoutButton = document.getElementById('logout-button');
+
+let currentFilter = 'Geral';
+let currentChartType = 'frequency';
+let mainChart = null;
+let allUnitData = {};
+let allFrequencyData = {};
 
 const parseDate = (dateString) => {
     const [day, month, year] = dateString.split('/');
@@ -235,53 +236,77 @@ const updateDashboard = () => {
     });
 };
 
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        initializeAppWithData();
+        addEventListeners();
+    } else {
+        window.location.href = 'login.html';
+    }
+});
+
 async function initializeAppWithData() {
     try {
-        const snapshot = await get(ref(db, '/'));
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            allUnitData = data.unidades || {};
-            allFrequencyData = data.frequencias || {};
+        // 1. Cria duas promessas de busca, uma para cada caminho permitido pelas regras.
+        const unidadesPromise = get(ref(db, '/unidades'));
+        const frequenciasPromise = get(ref(db, '/frequencias'));
 
-            filterContainer.innerHTML = '<button data-filter="Geral" class="filter-btn w-full text-left py-2 px-4 rounded-md">Geral (Estaca)</button>';
-            Object.keys(allUnitData).forEach(alaName => {
-                const button = document.createElement('button');
-                button.dataset.filter = alaName;
-                button.className = 'filter-btn w-full text-left py-2 px-4 rounded-md transition-colors duration-200 hover:bg-gray-700';
-                button.textContent = alaName;
-                filterContainer.appendChild(button);
-            });
-            // A primeira renderização completa do dashboard
-            updateDashboard();
+        // 2. Espera que AMBAS as buscas terminem.
+        const [unidadesSnapshot, frequenciasSnapshot] = await Promise.all([unidadesPromise, frequenciasPromise]);
+
+        // 3. Processa os resultados de cada busca.
+        if (unidadesSnapshot.exists()) {
+            allUnitData = unidadesSnapshot.val();
         } else {
-            dashboardTitle.textContent = "Nenhum dado encontrado no banco.";
+            console.warn("Nenhum dado encontrado em /unidades");
         }
+
+        if (frequenciasSnapshot.exists()) {
+            allFrequencyData = frequenciasSnapshot.val();
+        } else {
+            console.warn("Nenhum dado encontrado em /frequencias");
+        }
+
+        // 4. Continua com a renderização do dashboard
+        filterContainer.innerHTML = '<button data-filter="Geral" class="filter-btn w-full text-left py-2 px-4 rounded-md">Geral (Estaca)</button>';
+        Object.keys(allUnitData).forEach(alaName => {
+            const button = document.createElement('button');
+            button.dataset.filter = alaName;
+            button.className = 'filter-btn w-full text-left py-2 px-4 rounded-md transition-colors duration-200 hover:bg-gray-700';
+            button.textContent = alaName;
+            filterContainer.appendChild(button);
+        });
+        updateDashboard(); // Renderiza o dashboard pela primeira vez
+
     } catch (error) {
+        // Este erro agora não deve mais ser de permissão
         console.error("Erro ao buscar dados do Firebase:", error);
         dashboardTitle.textContent = "Erro ao carregar dados.";
     }
 }
 
-filterContainer.addEventListener('click', (e) => {
-    if (e.target.classList.contains('filter-btn')) {
-        currentFilter = e.target.dataset.filter;
+function addEventListeners() {
+    filterContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('filter-btn')) {
+            currentFilter = e.target.dataset.filter;
+            updateDashboard();
+        }
+    });
+
+    chartSelector.addEventListener('change', (e) => {
+        currentChartType = e.target.value;
         updateDashboard();
-    }
-});
+    });
 
-chartSelector.addEventListener('change', (e) => {
-    currentChartType = e.target.value;
-    updateDashboard();
-});
-
-logoutButton.addEventListener('click', async () => {
-    try {
-        await signOut(auth);
-        window.location.href = 'login.html';
-    } catch (error) {
-        console.error("Erro ao fazer logout:", error);
-        alert("Não foi possível sair. Tente novamente.");
-    }
-});
-
-document.addEventListener('DOMContentLoaded', initializeAppWithData);
+    logoutButton.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            // O próprio onAuthStateChanged cuidará do redirecionamento
+            // Mas podemos forçar para uma resposta mais rápida
+            window.location.href = 'login.html';
+        } catch (error) {
+            console.error("Erro ao fazer logout:", error);
+            alert("Não foi possível sair. Tente novamente.");
+        }
+    });
+}
