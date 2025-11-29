@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metas | Poa Sul</title>
+    <link rel="icon" type="image/x-icon" href="img/templo-de-salt-lake.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-gray-100 flex">
+    <aside class="w-64 bg-gray-800 text-white p-6 flex-shrink-0">
+        <div class="flex items-center mb-10">
+            <h1 class="text-xl font-bold">Estaca Poa Sul</h1>
+        </div>
+        <nav>
+            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Unidades</h2>
+            <div id="filter-container" class="space-y-2">
+                <button data-filter="Geral"
+                    class="filter-btn w-full text-left py-2 px-4 rounded-md transition-colors duration-200 hover:bg-gray-700">
+                    Estaca</button>
+                <button data-filter="Vila Nova"
+                    class="filter-btn w-full text-left py-2 px-4 rounded-md transition-colors duration-200 hover:bg-gray-700">Ala
+                    Vila Nova</button>
+                <button data-filter="Ipanema"
+                    class="filter-btn w-full text-left py-2 px-4 rounded-md transition-colors duration-200 hover:bg-gray-700">Ala
+                    Ipanema</button>
+                <button data-filter="Nilo"
+                    class="filter-btn w-full text-left py-2 px-4 rounded-md transition-colors duration-200 hover:bg-gray-700">Ala
+                    Nilo</button>
+                <button data-filter="Restinga"
+                    class="filter-btn w-full text-left py-2 px-4 rounded-md transition-colors duration-200 hover:bg-gray-700">Ala
+                    Restinga</button>
+                <button data-filter="Túnel"
+                    class="filter-btn w-full text-left py-2 px-4 rounded-md transition-colors duration-200 hover:bg-gray-700">Ala
+                    Túnel</button>
+            </div>
+        </nav>
+    </aside>
+    <main class="flex-1 p-8">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h2 id="dashboard-title" class="text-3xl font-bold text-gray-800">Carregando dados...</h2>
+                <p class="text-gray-500">Dados da unidade</p>
+            </div>
+            <button id="logout-button"
+                class="text-sm font-medium text-gray-500 hover:text-gray-800 hover:underline transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Sair
+            </button>
+        </header>
+        <div id="kpi-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-md flex flex-col h-96">
+                <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                    <h3 id="chart-title" class="text-xl font-semibold text-gray-700"></h3>
+                    <select id="chart-selector" class="border border-gray-300 rounded-md p-1 text-sm bg-gray-50">
+                        <option value="frequency">Frequência Sacramental</option>
+                        <option value="organizations">Distribuição por Organização</option>
+                        <option value="recommends">Status das Recomendações</option>
+                    </select>
+                </div>
+                <div class="relative flex-grow">
+                    <canvas id="main-chart"></canvas>
+                </div>
+            </div>
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md flex flex-col h-96">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4 flex-shrink-0">Organizações</h3>
+                <div id="organizations-container" class="space-y-4 text-gray-700 pt-2"></div>
+            </div>
+        </div>
+    </main>
+    <!-- <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuWJYHR_n3riRVLGy1e-WeMGNgyDYJaPU",
+            authDomain: "christianbotproject.firebaseapp.com",
+            databaseURL: "https://christianbotproject-default-rtdb.firebaseio.com",
+            projectId: "christianbotproject",
+            storageBucket: "christianbotproject.firebasestorage.app",
+            messagingSenderId: "134287955703",
+            appId: "1:134287955703:web:3a1281b57b626f59e765f2",
+            measurementId: "G-YVT1XN1FSN"
+        };
+        const app = initializeApp(firebaseConfig);
+    </script> -->
+    <script type="module" src="js/auth-guard.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+</body>
+
+</html>
