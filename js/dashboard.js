@@ -8,6 +8,7 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 
 const dashboardTitle = document.getElementById('dashboard-title');
+const dashboardSubtitle = document.getElementById('dashboard-subtitle');
 const filterContainer = document.getElementById('filter-container');
 const kpiContainer = document.getElementById('kpi-container');
 const organizationsContainer = document.getElementById('organizations-container');
@@ -37,10 +38,10 @@ const renderFrequencyChart = (frequencyDataArray) => {
     return {
         type: 'bar',
         data: {
-            labels: sortedData.map(d => d.Data), // Eixo X
+            labels: sortedData.map(d => d.Data),
             datasets: [{
                 label: 'Frequência na Reunião',
-                data: sortedData.map(d => d.Frequencia), // Eixo Y
+                data: sortedData.map(d => d.Frequencia),
                 backgroundColor: 'rgba(59, 130, 246, 0.6)',
                 borderColor: 'rgba(37, 99, 235, 1)',
             }]
@@ -247,14 +248,12 @@ onAuthStateChanged(auth, (user) => {
 
 async function initializeAppWithData() {
     try {
-        // 1. Cria duas promessas de busca, uma para cada caminho permitido pelas regras.
         const unidadesPromise = get(ref(db, '/unidades'));
         const frequenciasPromise = get(ref(db, '/frequencias'));
+        const timestampPromise = get(ref(db, '/ultima_atualizacao'));
 
-        // 2. Espera que AMBAS as buscas terminem.
-        const [unidadesSnapshot, frequenciasSnapshot] = await Promise.all([unidadesPromise, frequenciasPromise]);
+        const [unidadesSnapshot, frequenciasSnapshot, timestampSnapshot] = await Promise.all([unidadesPromise, frequenciasPromise, timestampPromise]);
 
-        // 3. Processa os resultados de cada busca.
         if (unidadesSnapshot.exists()) {
             allUnitData = unidadesSnapshot.val();
         } else {
@@ -267,7 +266,13 @@ async function initializeAppWithData() {
             console.warn("Nenhum dado encontrado em /frequencias");
         }
 
-        // 4. Continua com a renderização do dashboard
+        if (timestampSnapshot.exists()) {
+            const timestamp = timestampSnapshot.val().Ultima_atualizacao;
+            dashboardSubtitle.textContent = `Última atualização: ${timestamp}`;
+        } else {
+            dashboardSubtitle.textContent = 'Dados ainda não atualizados.';
+        }
+
         filterContainer.innerHTML = '<button data-filter="Geral" class="filter-btn w-full text-left py-2 px-4 rounded-md">Geral (Estaca)</button>';
         Object.keys(allUnitData).forEach(alaName => {
             const button = document.createElement('button');
@@ -276,10 +281,9 @@ async function initializeAppWithData() {
             button.textContent = alaName;
             filterContainer.appendChild(button);
         });
-        updateDashboard(); // Renderiza o dashboard pela primeira vez
+        updateDashboard(); 
 
     } catch (error) {
-        // Este erro agora não deve mais ser de permissão
         console.error("Erro ao buscar dados do Firebase:", error);
         dashboardTitle.textContent = "Erro ao carregar dados.";
     }
@@ -301,8 +305,6 @@ function addEventListeners() {
     logoutButton.addEventListener('click', async () => {
         try {
             await signOut(auth);
-            // O próprio onAuthStateChanged cuidará do redirecionamento
-            // Mas podemos forçar para uma resposta mais rápida
             window.location.href = 'login.html';
         } catch (error) {
             console.error("Erro ao fazer logout:", error);
